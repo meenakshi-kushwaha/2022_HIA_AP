@@ -10,22 +10,23 @@ output:
     toc_float: true
 ---
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-library(here) # seting working directory
+library(here) # setting working directory
 library(tidyverse) # tidy data analysis
 ```
+
 ### About
+
 This file contains code for PM2.5 associated health impact analysis. The code uses sample exposure and outcome data that you can replace with your own dataset. Before starting your analysis please go throug the `README` file on background and instructions.
 
 ### Loading files
 
-There are three files to be read into R and joined together. 
+There are three files to be read into R and joined together.
 
-- Exposure data `exposure.csv` (`Sample Data` folder) 
-- Health outcome data `outcome.csv` (`Sample Data` folder)
-- Exposure response function `rr_gbd2019.csv` 
+-   Exposure data `exposure.csv` (`Sample Data` folder)
+-   Health outcome data `outcome.csv` (`Sample Data` folder)
+-   Exposure response function `rr_gbd2019.csv`
 
 Below, we will read these files one by one, take a look at the data format and prepare them for joining together.
 
@@ -42,9 +43,9 @@ exposure_join <- exposure_data %>%
   mutate(pm25 = signif(pm25, 2)) # prepare file for joining by pm25 values
 ```
 
-The sample data has annual mean PM2.5 `pm25` concentrations from five cities (city_A, city_B...) from 2016 to 2020. The dataset has `r nrow(exposure_data)` columns and `r ncol(exposure_data)` rows. 
+The sample data has annual mean PM2.5 `pm25` concentrations from five cities (city_A, city_B...) from 2016 to 2020. The dataset has `r nrow(exposure_data)` columns and `r ncol(exposure_data)` rows.
 
-To replace the `exposure.csv` file with your own exposure data. Make sure your data has the same file name and column names as the sample data. 
+To replace the `exposure.csv` file with your own exposure data. Make sure your data has the same file name and column names as the sample data.
 
 #### Health outcome data
 
@@ -57,15 +58,15 @@ knitr::kable(head(outcome_data),
 
 ```
 
-Annual mortality data from five cities (`city_A`, `city_B`...) from `2018` to `2020` for copd with following causes - diabetese, ihd, lung cancer and stroke. The dataset has `r nrow(outcome_data)` columns and `r ncol(outcome_data)` rows divided by age group and gender. 
+Annual mortality data from five cities (`city_A`, `city_B`...) from `2018` to `2020` for copd with following causes - diabetese, ihd, lung cancer and stroke. The dataset has `r nrow(outcome_data)` columns and `r ncol(outcome_data)` rows divided by age group and gender.
 
-To replace the `outcome.csv` file with your own health outcome data, ensure your data has the same file name and column names as the sample data. 
-
+To replace the `outcome.csv` file with your own health outcome data, ensure your data has the same file name and column names as the sample data.
 
 #### Exposure response function
 
-This is PM2.5 exposure response relationship from GBD 2019 calculations. Source link ___?
-More description - TBD
+This is PM2.5 exposure response relationship from GBD 2019 calculations.^[Source:https://ghdx.healthdata.org/record/ihme-data/global-burden-disease-study-2019-gbd-2019-particulate-matter-risk-curves] 
+
+
 ```{r read_exp_resp_table}
 gbd_rr <- read_csv(here("rr_gbd2019.csv"))
 
@@ -82,8 +83,14 @@ gbd_rr_join <- gbd_rr %>%
 
 ```
 
+### Join files
 
-### Join files 
+Combine exposure, outcome and exposure response data for finaly analysis. This includes following steps.
+
+1.  Join exposure file with the exposure response table `exposure_rr`
+2.  Add health outcome data `outcome_exposure_rr`.
+
+For this step to work accurately, make sure that the joining columns or "key columns" are formatted similarly. Learn more in the `README` file.
 
 ```{r file_joining}
 exposure_rr <- left_join(exposure_join, # joining exposure data with exposure response table
@@ -102,19 +109,37 @@ outcome_exposure_rr <- left_join(outcome_data, # adding health outcome data
 
 ```
 
-### Calculate PM2.5 burden
-PM2.5 health burdent is calculated by mulitplying the number of outcomes, for eg. number or `count` of deaths with the Population Attribuatable Fraction for PM2.5 `paf_pm`. Results can be aggregated by region and by year as below.
+### Calculate PM2.5 burden 
+
+PM2.5 health burden is calculated by mulitplying the number of outcomes, for eg. `count` of deaths with the Population Attribuatable Fraction for PM2.5 `paf_pm`. Results can be aggregated by region or  by a particular year as below (2019, in this example). To generate results for a different year, replace the year value in `filter(year ==   )` call under the `# for year 2019` comment. 
 
 ```{r}
 
 pm25_burden <- outcome_exposure_rr %>% 
   mutate(pm25_burden = count*paf_pm)
 
-# by region
-pm25_burden_region <- pm25_burden %>% group_by(region, year) %>% summarize(tota_deaths = sum(pm25_burden, na.rm = TRUE))
+# add a column for mortality per 100,000 people
+
+pm25_burden <- pm25_burden %>% 
+  mutate(pm25_burden_100k = pm25_burden/100000)
+
+# by region and year
+pm25_burden_region <- pm25_burden %>% 
+  group_by(region, year) %>% 
+  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE), 
+            deaths_100K = sum(pm25_burden_100k, na.rm = TRUE))
+
+write_csv(pm25_burden_region, here("Results","pm25_burden_region.csv"))
+
 
 # for year 2019
-pm25_burden_2019 <- pm25_burden %>% filter(year == 2019) %>% group_by(region) %>%  summarize(total_deaths = sum(pm25_burden, na.rm = TRUE))
+pm25_burden_2019 <- pm25_burden %>% 
+  filter(year == 2019) %>% 
+  group_by(region) %>%  
+  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE),
+            deaths_100K = sum(pm25_burden_100k, na.rm = TRUE))
+
+write_csv(pm25_burden_2019, here("Results","pm25_burden_2019.csv"))
 
 knitr::kable(pm25_burden_2019,
              caption = "Total deaths in 2019 attributable to PM2.5", 
