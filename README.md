@@ -1,5 +1,5 @@
 # 2022_HIA_AP
-This folder contains code^[This code and sample data has been adapted from work done by Ginanjar Syuhada for Indonesia Air Quality Project] for computing the health burden of air pollution with example data. The `.Rmd` file format displays your code, notes, and results simultaneously. The folder structure is as below:
+This folder contains code for computing the health burden of air pollution with example data [^1]. The `.Rmd` file format displays your code, notes, and results simultaneously. The folder structure is as below:
 - README.md
 - 2022_HIA_all.Rmd
 
@@ -34,6 +34,5 @@ This folder contains code^[This code and sample data has been adapted from work 
   - Click the dropdown menu next to the Knit button on top of the .Rmd file and click on `Knit to PDF` or `Knit to Word`.
 
 
-
-
+[1]: This code and sample data has been adapted from work done by Ginanjar Syuhada for Indonesia Air Quality Project
  
