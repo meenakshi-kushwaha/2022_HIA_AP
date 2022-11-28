@@ -22,7 +22,7 @@ This file contains code for PM2.5 associated health impact analysis. The code us
 
 ### Loading files
 
-There are three files to be read into R and joined together.
+There are three main files to be read into R and joined together.
 
 -   Exposure data `exposure.csv` (`Sample Data` folder)
 -   Health outcome data `outcome.csv` (`Sample Data` folder)
@@ -109,25 +109,21 @@ outcome_exposure_rr <- left_join(outcome_data, # adding health outcome data
 
 ```
 
-### Calculate PM2.5 burden 
+### Calculate total PM2.5 burden 
 
 PM2.5 health burden is calculated by mulitplying the number of outcomes, for eg. `count` of deaths with the Population Attribuatable Fraction for PM2.5 `paf_pm`. Results can be aggregated by region or  by a particular year as below (2019, in this example). To generate results for a different year, replace the year value in `filter(year ==   )` call under the `# for year 2019` comment. 
 
-```{r}
+```{r pm25_burden}
 
 pm25_burden <- outcome_exposure_rr %>% 
   mutate(pm25_burden = count*paf_pm)
 
-# add a column for mortality per 100,000 people
-
-pm25_burden <- pm25_burden %>% 
-  mutate(pm25_burden_100k = pm25_burden/100000)
+pm25_burden <- pm25_burden
 
 # by region and year
 pm25_burden_region <- pm25_burden %>% 
   group_by(region, year) %>% 
-  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE), 
-            deaths_100K = sum(pm25_burden_100k, na.rm = TRUE))
+  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE))
 
 write_csv(pm25_burden_region, here("Results","pm25_burden_region.csv"))
 
@@ -136,13 +132,34 @@ write_csv(pm25_burden_region, here("Results","pm25_burden_region.csv"))
 pm25_burden_2019 <- pm25_burden %>% 
   filter(year == 2019) %>% 
   group_by(region) %>%  
-  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE),
-            deaths_100K = sum(pm25_burden_100k, na.rm = TRUE))
+  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE))
 
 write_csv(pm25_burden_2019, here("Results","pm25_burden_2019.csv"))
 
 knitr::kable(pm25_burden_2019,
              caption = "Total deaths in 2019 attributable to PM2.5", 
+             align = "c")
+
+```
+
+### Calculate PM2.5 burden per 100K population
+
+For this step, we need to combine the PM2.5 burden data with population of that year and then use the formula:   
+Deaths per 100K = Total deaths/Population * 100000
+
+```{r pm25_burden_per100k}
+# Read and combine 2019 population data with the pm25_burden_2019 dataframe
+
+pop_2019 <- read_csv(here("Sample Data", "population_2019.csv"))
+
+pm25_burden_2019_per100k <- pm25_burden_2019 %>% 
+  left_join(pop_2019, by = "region") %>% 
+  mutate(deaths_per100k = deaths_total/pop_2019*100000)
+
+write_csv(pm25_burden_2019_per100k, here("Results", "pm25_burden_2019_per100k.csv"))
+
+
+knitr::kable(pm25_burden_2019_per100k,
              align = "c")
 
 ```

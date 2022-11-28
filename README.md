@@ -1,7 +1,5 @@
 # 2022_HIA_AP
-This folder contains code for computing the health burden of air pollution with example data [^1]. The `.Rmd` file format displays your code, notes, and results simultaneously. The folder structure is as below:
-- README.md
-- 2022_HIA_all.Rmd
+This folder contains code for computing the health burden of air pollution with example data [^1]. The `.Rmd` file format displays your code, notes, and results simultaneously. 
 
 ## How to use this code
 
