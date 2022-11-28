@@ -54,6 +54,7 @@ outcome_data <- read_csv(here("Sample Data", "outcome.csv" ))
 
 knitr::kable(head(outcome_data), 
              align = 'c', 
+             digits = 0,
              caption = "First six rows of outcome data")
 
 ```
@@ -72,6 +73,7 @@ gbd_rr <- read_csv(here("rr_gbd2019.csv"))
 
 knitr::kable(head(gbd_rr),
              align = "c",
+             digits = 3,
              caption = "First six rows of GBD PM2.5 exposure response table")
 
 gbd_rr_join <- gbd_rr %>% 
@@ -123,7 +125,9 @@ pm25_burden <- pm25_burden
 # by region and year
 pm25_burden_region <- pm25_burden %>% 
   group_by(region, year) %>% 
-  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE))
+  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE)) %>% 
+  mutate(deaths_total = round(deaths_total, digits = 0))
+  
 
 write_csv(pm25_burden_region, here("Results","pm25_burden_region.csv"))
 
@@ -132,7 +136,8 @@ write_csv(pm25_burden_region, here("Results","pm25_burden_region.csv"))
 pm25_burden_2019 <- pm25_burden %>% 
   filter(year == 2019) %>% 
   group_by(region) %>%  
-  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE))
+  summarize(deaths_total = sum(pm25_burden, na.rm = TRUE)) %>% 
+  mutate(deaths_total = round(deaths_total, digits = 0))
 
 write_csv(pm25_burden_2019, here("Results","pm25_burden_2019.csv"))
 
@@ -154,7 +159,8 @@ pop_2019 <- read_csv(here("Sample Data", "population_2019.csv"))
 
 pm25_burden_2019_per100k <- pm25_burden_2019 %>% 
   left_join(pop_2019, by = "region") %>% 
-  mutate(deaths_per100k = deaths_total/pop_2019*100000)
+  mutate(deaths_per100k = deaths_total/pop_2019*100000) %>% 
+  mutate(deaths_per100k = round(deaths_per100k, digits = 0))
 
 write_csv(pm25_burden_2019_per100k, here("Results", "pm25_burden_2019_per100k.csv"))
 
